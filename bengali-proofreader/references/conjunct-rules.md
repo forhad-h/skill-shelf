@@ -309,7 +309,7 @@ The vowel signs **এ-কার** (ে) and **ও-কার** (ো) are the two 
 
 - Native Bengali words: বোল, কোমল, দোকান, ঘোড়া, ওষুধ, ওই
 - তৎসম words: দোষ, শোভা, সোম, মোহ, বোধ
-- Common patterns: consonant + ো + consonant (ঘোড়া = ঘ + ো + ড + � + আ)
+- Common patterns: consonant + ো + consonant (ঘোড়া = ঘ + ো + ড + ় + আ)
 
 ---
 

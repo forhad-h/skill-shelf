@@ -19,20 +19,6 @@ Take a raw Bengali draft through a sequential pipeline of sub-skills and write t
 
 ---
 
-## Output target — single rule
-
-**Resolve `output_path` (first match wins):**
-1. From the `output_path` arg if provided.
-2. Else, if `input_path` was provided → use `input_path`.
-3. Else → `stdout` (no file written).
-
-**Write:**
-- When the resolved output path **differs** from `input_path`, **overwrite** the output file entirely with `draft_final`.
-- When the resolved output path **equals** `input_path`, **append** `draft_final` to the file, separated from prior contents by a single blank line.
-- When the target is `stdout`, skip the file write.
-
----
-
 ### Step 1 — Read the input
 
 Resolve inputs in this order. Do not ask about audience, tone, length, or register.
@@ -51,132 +37,116 @@ Capture `output_path` if the user provided one as an arg; otherwise leave it for
 
 This gate runs **before** Step 2 so the pipeline is not executed on non-Bengali or empty input.
 
-### Step 2 — Run the pipeline
-
-The pipeline has two modes. Choose the mode **before** invoking any sub-skill, based on what the draft is trying to communicate.
-
-#### Decide the mode
-
-**Mode A — full pipeline** — use when `draft_raw` contains any **verifiable technical, legal, medical, scientific, or financial claim**. The trigger is **claim presence**, not genre — a personal reflection that embeds a verifiable factual claim (for example, "I feel tired because React 18 introduced concurrent rendering") still goes through Mode A. Specifically:
-
-- A claim about a specific technology, framework, tool, library, language version, API behavior, or benchmark
-- A claim about a law, regulation, contract, license, or legal right/obligation
-- A claim about a drug, treatment, diagnosis, symptom, or medical guideline
-- A claim about a scientific fact, statistic, study result, or research finding
-- A claim about a financial product, tax rule, market data, or investment outcome
-- Named numbers, dates, percentages, or measurements presented as fact
-
-**Mode B — short pipeline** — use when the draft is:
-
-- A personal feeling, reflection, mood, or life experience
-- A motivational or philosophical musing
-- A generic career/learning/life lesson with no factual claims to verify
-- Pure storytelling or anecdote
-
-**When in doubt, use Mode A.** The cost of an extra validation is lower than publishing a wrong technical claim.
-
-#### Mode A — full pipeline
-
-Why three rows: the validator's `Corrected:` substitutions may introduce (a) **spelling drift** — a substituted term may end up misspelled against Bangla Academy rules, and (b) **punctuation drift** — দাঁড়ি, কমা, hyphen, etc. around the substituted terms may become inconsistent. The second proofread pass realigns substituted terms with Bangla Academy rules.
-
-**Division of labor:**
-- The **validator** corrects factual claims (term-level: e.g. `রিঅ্যাক্ট` → `React`, `Postgres 16` → `PostgreSQL 16`).
-- The **proofreader** corrects spelling and punctuation against Bangla Academy rules (e.g. `এড়িয়া` → `এড়িয়ে`, normalization of দাঁড়ি / কমা / hyphen).
-
-The validator itself does **not** write a corrected draft. It only emits an `ISSUES` list with `Corrected:` fragments. This parent skill applies those substitutions.
-
-**Pipeline row 1 — proofread pass 1**
-
-Invoke `/bengali-proofreader` with `draft_raw`.
-
-Capture:
-- `--- CORRECTED DRAFT ---` block → `draft_v1`
-- `--- CHANGES ---` block → `changes_v1`
-
-**Pipeline row 2 — validate**
-
-Invoke `/bengali-concept-validator` with `draft_v1`.
-
-Capture:
-- `--- ISSUES ---` list, each with its `Corrected:` line → `issues`
-- `--- FLAGS ---` list → `flags`
-
-**Apply corrections.** For each item in `issues`, substitute the `Corrected:` fragment for the original fragment in `draft_v1` to produce `draft_v2`. Substitutions are applied in the order the issues appear in the validator's report. Do not rewrite for style — the corrected fragment is taken verbatim from the validator.
-
-**Pipeline row 3 — proofread pass 2**
-
-Invoke `/bengali-proofreader` with `draft_v2`.
-
-Capture:
-- `--- CORRECTED DRAFT ---` block → `draft_final`
-- `--- CHANGES ---` block → `changes_v2`
-- `--- SUGGESTIONS ---` block → `suggestions`
-
-#### Mode B — short pipeline
-
-No validator pass, no second proofread pass — the first proofread is the final proofread. There is nothing to realign because nothing was substituted.
-
-**Pipeline row 1 — proofread pass 1**
-
-Invoke `/bengali-proofreader` with `draft_raw`.
-
-Capture:
-- `--- CORRECTED DRAFT ---` block → `draft_final`
-- `--- CHANGES ---` block → `changes_v1`
-- `--- SUGGESTIONS ---` block → `suggestions`
-
 ---
 
-Never write `draft_v1`, `draft_v2`, or any intermediate to disk mid-pipeline. Never show `draft_v1` or `draft_v2` to the user. The user only sees the result of Step 4.
+## Hard rules — pipeline enforcement
 
-### Step 3 — Output to the user
+These rules apply to both Mode A and Mode B. Violating any of them is a contract breach.
 
-Bengali script does not render in some terminals, so avoid dumping Bengali into chat unless there is no other place for it. The chat output is a **short English summary**; the file write carries the Bengali.
+1. **You MUST invoke each required sub-skill as a separate skill-invocation call.** Do not run their workflow in-line by re-reading their SKILL.md and impersonating them. Use whatever invocation primitive your environment exposes — the contract is the separate invocation, not the syntax.
+2. **You MUST NOT skip a pipeline row.** Every row listed under §"Mode A" or §"Mode B" is required, not optional. "The result already looks good" or "no factual claims spotted" are not valid reasons to skip Row 2 / Row 3 — only the Mode B trigger criteria in §"Decide the mode" can drop the validator row.
+3. **You MUST NOT write `draft_final` (or any intermediate) to disk until every required row has produced its captured output.** Treat the absence of `draft_v1`, `issues`, or `draft_final` as a bug, not a shortcut.
+4. **You MUST capture the exact block names** each sub-skill emits (see "Block contract" below). If a sub-skill returns prose instead of the named block, that is the sub-skill failing — re-invoke it or stop and tell the user.
+5. **You MUST NOT print `draft_v1`, `draft_v2`, or `draft_final` to chat** unless the output target is `stdout` (see Step 4). Chat carries a one-line English summary only.
 
-**If a file was written** (separate output path or appended to `input_path`):
+### Block contract — what each sub-skill emits
 
-Keep chat output to a single short English paragraph — at most. Emit one line such as:
+| Sub-skill | Input | Output blocks you MUST capture |
+|---|---|---|
+| `bengali-proofreader` | inline Bengali text | `--- CORRECTED DRAFT ---`, `--- CHANGES ---`, optionally `--- SUGGESTIONS ---`, `--- NOTES ---` |
+| `bengali-concept-validator` | inline Bengali text | `--- VALIDATION REPORT ---`, `--- ISSUES ---`, `--- FLAGS ---`, `--- NOTES ---` |
 
+If a captured block is missing or the sub-skill refused to run (e.g. "input is empty or only English"), STOP the pipeline and report the failure in chat. Do not silently produce `draft_final` from partial inputs.
+
+### Step 2 — Decide the mode
+
+Scan `draft_raw` once. Choose **exactly one** mode:
+
+- **Mode A** — `draft_raw` contains any verifiable technical, legal, medical, scientific, or financial claim. Trigger is claim presence, not genre. Specifically: claims about a technology / framework / tool / API / version / benchmark; laws or regulations; drugs or treatments; scientific facts or statistics; financial products or market data; named numbers / dates / percentages presented as fact.
+- **Mode B** — `draft_raw` is purely personal feeling, reflection, motivational, or storytelling with no factual claims to verify.
+
+**When in doubt, Mode A.** The cost of an extra validation is lower than publishing a wrong technical claim.
+
+State the chosen mode in chat (one sentence) before invoking any sub-skill. The statement is for traceability, not the user — keep it brief.
+
+### Step 3 — Run the pipeline (mandatory order)
+
+You MUST run every row below, in order, as a separate skill-invocation call. Do not skip a row. Do not collapse two rows into one call.
+
+**Mode A — full pipeline (3 rows):**
+
+1. **Row 1 — Proofread pass 1.** Invoke the `bengali-proofreader` skill with `draft_raw`. Capture the `--- CORRECTED DRAFT ---` block as `draft_v1` and the `--- CHANGES ---` block as `changes_v1`.
+2. **Row 2 — Validate concepts.** Invoke the `bengali-concept-validator` skill with `draft_v1`. Capture `--- ISSUES ---` as `issues` and `--- FLAGS ---` as `flags`. Apply each `Corrected:` substitution from `issues` to `draft_v1` in the order they appear, producing `draft_v2`. Substitutions are verbatim — no rewriting for style.
+3. **Row 3 — Proofread pass 2.** Invoke the `bengali-proofreader` skill with `draft_v2`. Capture `--- CORRECTED DRAFT ---` as `draft_final`, `--- CHANGES ---` as `changes_v2`, and `--- SUGGESTIONS ---` (if present) as `suggestions`.
+
+If any row fails to produce its named block, STOP. Do not proceed to Step 4. Report the failing row to the user in chat.
+
+**Mode B — short pipeline (1 row):**
+
+1. **Row 1 — Proofread pass 1.** Same as Mode A Row 1 (invoke the `bengali-proofreader` skill with `draft_raw`). `draft_final = draft_v1`.
+
+You MUST NOT use `draft_raw` as `draft_final`. That is a bypass.
+
+### Step 4 — Write to disk
+
+Resolve `output_path` (first match wins):
+1. From the `output_path` arg if provided.
+2. Else, if `input_path` was provided → use `input_path`.
+3. Else → `stdout` (no file written).
+
+Write rules:
+- `output_path` differs from `input_path` → overwrite output file entirely with `draft_final`.
+- `output_path` equals `input_path` → **append** a structured block to the file in this exact format:
+
+  ```markdown
+  ---
+
+  ## Polished Draft — <YYYY-MM-DD>
+
+  <draft_final, verbatim>
+
+  <details>
+  <summary>✏️ Changes (<N> fixes)</summary>
+
+  <changes_block, see Step 4.5>
+
+  </details>
+  ```
+
+  Where `<YYYY-MM-DD>` is today's date in ISO 8601 (use the current date, not the file's mtime). The horizontal rule `---` and the `##` heading are mandatory — they give the polished version a visible boundary and an Obsidian outline entry, so it does not blend into the original draft above it. The `<details>` block is **also mandatory when there were any changes**, and collapsed by default so it does not clutter normal reading of the polished draft. If every section of the change log below is empty (no spelling, no validator, no pass-2), emit `<summary>✏️ Changes (no fixes)</summary>` followed by an empty body — do not omit the block.
+- Target is `stdout` → skip file write, print `draft_final` and warnings instead.
+
+### Step 4.5 — Build the changes block
+
+You MUST build the `<details>` body from the captured outputs (`changes_v1`, `issues`, `flags`, `changes_v2`, `suggestions`). The body has three sections, in this order. If a section is empty, omit its `**heading:**` line entirely (do not print "no changes" placeholders inline — keep the file tidy).
+
+```markdown
+**Spelling (proofreader pass 1):**
+- <change 1 verbatim from changes_v1>
+- <change 2 verbatim>
+...
+
+**Concepts (concept-validator):**
+- <issue 1: original fragment → corrected fragment, with one-line why>
+
+**Re-proof (proofreader pass 2):**
+- <change verbatim from changes_v2, if any — this pass catches spelling drift introduced by validator substitutions>
 ```
-Written to: <path>. Validator flagged N issue(s); see file for corrected draft.
-```
 
-Optionally follow with one short English paragraph summarizing what changed (e.g. "Fixed spelling of React 18, PostgreSQL 16, এড়িয়ে → এড়িয়ে; punctuation around প্রতিটি normalized."). Do not paste the Bengali drafts.
+Rules:
+- Each line is one bullet, plain markdown. No code fences around individual entries.
+- Take items **verbatim** from the sub-skill outputs. Do not paraphrase, do not translate rule names into English, do not number them — the source skill already numbered them.
+- `suggestions` from proofreader pass 2 are stylistic and **MUST NOT** go into the changes block. Suggestions belong in chat (Mode B) or are dropped (Mode A — they would re-trigger noise). If `suggestions` is non-empty in Mode A, briefly note "Proofreader pass 2 had some suggestions — see chat" in the `**Re-proof**` section instead of listing them.
+- For Mode B, only `changes_v1` is present. Use the single section `**Spelling (proofreader pass 1):**` and omit the other two headings.
+- Total fix count `<N>` in the `<summary>` line is the sum of `changes_v1 + issues + changes_v2` items (Mode A) or `changes_v1` items (Mode B).
 
-**If there is no file to write** (target was `stdout`):
+You MUST write before producing chat output. Do not print a "done" message without a successful Write call (or an explicit `stdout` fallback).
 
-Print the full polished post and warnings so the user can copy them out:
+### Step 5 — Chat output
 
-```
---- POLISHED POST ---
-<draft_final, ready to paste>
+If a file was written: emit one short English line such as `Written to: <path>. Validator: <n> issues, <n> flags. Proofreader: pass 1 <n> changes, pass 2 <n> changes.` Optionally one more short English sentence summarizing what changed. No Bengali in chat.
 
---- WARNINGS ---
-Group items by the sub-skill that produced them, in collection order
-within each group.
-
-Mode A (full pipeline):
-  WARNINGS = flags (verbatim from validator) ∪ suggestions (verbatim from proofreader pass 2).
-
-bengali-concept-validator:
-- <flag 1, verbatim>
-- <flag 2, verbatim>
-(if none: "no flags")
-
-bengali-proofreader (pass 2):
-- <suggestion 1, verbatim>
-(if none: "no suggestions")
-
-Mode B (short pipeline):
-  WARNINGS = suggestions (verbatim from proofreader pass 1 only).
-
-bengali-concept-validator:
-- not invoked
-
-bengali-proofreader (pass 1):
-- <suggestion 1, verbatim>
-(if none: "no suggestions")
-```
+If target is `stdout`: print `--- POLISHED POST ---`, `draft_final`, then `--- WARNINGS ---` grouped by sub-skill (same format as the original SKILL.md).
 
 ---
 
@@ -195,6 +165,38 @@ Pipeline result when the target is a file (no Bengali in chat):
 ```
 Written to: ./draft.md. Validator: no flags. Proofreader pass 2: no suggestions.
 Summary: corrected রিঅ্যাক্ট → React, Postgres 16 → PostgreSQL 16, এড়িয়া → এড়িয়ে; normalized punctuation around প্রতিটি / query.
+```
+
+File contents after append (the original draft is unchanged; the polished version + collapsible change log are appended):
+
+```
+রিঅ্যাক্ট ১৮ এ useEffect এর dependency array পরিবর্তন এড়িয়া চলা উচিত।
+Postgres ১৬ এ প্রতি row এবং প্রতি query এ MVCC থাকে।
+আমাদের দল সবসময় ভুল বানান এড়িয়া চলে।
+
+---
+
+## Polished Draft — 2026-08-24
+
+React 18 এ useEffect এর dependency array পরিবর্তন এড়িয়ে চলা উচিত।
+PostgreSQL 16-এ প্রতিটি row-এবং প্রতিটি query-তে MVCC থাকে।
+আমাদের দল সবসময় ভুল বানান এড়িয়ে চলে।
+
+<details>
+<summary>✏️ Changes (3 fixes)</summary>
+
+**Spelling (proofreader pass 1):**
+- এড়িয়া → এড়িয়ে — common-errors §6
+
+**Concepts (concept-validator):**
+- রিঅ্যাক্ট ১৮ → React 18 — common misconception (React 18 docs)
+- Postgres ১৬ → PostgreSQL 16 — proper noun normalization
+- প্রতি row / প্রতি query → প্রতিটি row / প্রতিটি query — Bangla Academy canonical form
+
+**Re-proof (proofreader pass 2):**
+- (none — validator substitutions did not introduce drift)
+
+</details>
 ```
 
 Pipeline result when the target is `stdout` (full draft printed so the user can copy):
