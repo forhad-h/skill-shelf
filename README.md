@@ -29,6 +29,22 @@ References live in [`bengali-proofreader/references/`](bengali-proofreader/refer
 
 See [`bengali-proofreader/SKILL.md`](bengali-proofreader/SKILL.md).
 
+### `bengali-concept-validator`
+
+Validate the **technical, legal, medical, scientific, and financial** claims in a Bengali-script draft. Returns a validation report with corrected versions attached; **never** rewrites the draft file. Sub-skill of `bengali-post-editor` — normally invoked through the editor pipeline.
+
+Coverage:
+
+- Technical claims (versions, APIs, mechanisms, plausible numbers, security)
+- Legal claims (Bangladesh default; jurisdictions if referenced)
+- Medical claims (mechanism, dosage flagged for qualified source)
+- Scientific claims (physical / biological / chemical)
+- Financial claims (returns, tax rules)
+
+Reference: [`bengali-concept-validator/references/fact-check-prompts.md`](bengali-concept-validator/references/fact-check-prompts.md).
+
+See [`bengali-concept-validator/SKILL.md`](bengali-concept-validator/SKILL.md).
+
 ## Standard
 
 All spelling and punctuation rulings follow the **Bangla Academy** বাংলা ভাষার বানান অভিধান. Where the Academy allows both forms, prefer the one dominant in modern Bangladeshi tech writing.
@@ -39,6 +55,10 @@ All spelling and punctuation rulings follow the **Bangla Academy** বাংল�
 skill-shelf/
 ├── bengali-post-editor/
 │   └── SKILL.md
+├── bengali-concept-validator/
+│   ├── SKILL.md
+│   └── references/
+│       └── fact-check-prompts.md
 └── bengali-proofreader/
     ├── SKILL.md
     └── references/
