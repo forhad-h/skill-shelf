@@ -1,0 +1,17 @@
+{
+  "destination": ".",
+  "skills": [
+    {
+      "name": "bengali-concept-validator",
+      "source": "/home/forhad-hosain/Documents/Obsidian Vault/LinkedIn Posts/.puku-cli/skills/bengali-concept-validator"
+    },
+    {
+      "name": "bengali-post-editor",
+      "source": "/home/forhad-hosain/Documents/Obsidian Vault/LinkedIn Posts/.puku-cli/skills/bengali-post-editor"
+    },
+    {
+      "name": "bengali-proofreader",
+      "source": "/home/forhad-hosain/Documents/Obsidian Vault/LinkedIn Posts/.puku-cli/skills/bengali-proofreader"
+    }
+  ]
+}
