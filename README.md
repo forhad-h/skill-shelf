@@ -59,6 +59,19 @@ Files: `SKILL.md`, `hrp.schema.json`, `example-report.json`, `harness-report.htm
 
 See [`digest/SKILL.md`](digest/SKILL.md).
 
+### `skill-shelf-sync`
+
+Sync a newly shared skill into the **skill-shelf** repo and push to GitHub. The canonical ingest pipeline:
+
+1. **Register** — append the skill to `skills-config.json` (idempotent; never duplicate).
+2. **Copy** — run `./copy-skills.sh` to aggregate files into the repo.
+3. **Document** — update `README.md` (skills list + layout tree).
+4. **Push** — commit and `git push` to `origin/main`.
+
+Detects new skills from any skills directory (`~/.claude/skills`, `~/.puku-cli/skills`, or any `/skills` path) and runs the four steps in strict order. Refuses to push a half-synced tree on any step failure.
+
+See [`skill-shelf-sync/SKILL.md`](skill-shelf-sync/SKILL.md).
+
 ## Standard
 
 All spelling and punctuation rulings follow the **Bangla Academy** বাংলা ভাষার বানান অভিধান. Where the Academy allows both forms, prefer the one dominant in modern Bangladeshi tech writing.
@@ -88,4 +101,8 @@ skill-shelf/
     ├── example-report.json
     ├── harness-report.html
     └── renderer.js
+└── skill-shelf-sync/
+    └── SKILL.md
 ```
+
+The repo also carries a harness-discoverable copy of `skill-shelf-sync` at `.puku-cli/skills/skill-shelf-sync/` — that is the *source* the script reads from. The repo-root `skill-shelf-sync/` is the published mirror.

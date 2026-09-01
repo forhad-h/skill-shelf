@@ -16,6 +16,10 @@
     {
       "name": "digest",
       "source": "/home/forhad-hosain/.puku-cli/skills/digest"
+    },
+    {
+      "name": "skill-shelf-sync",
+      "source": "/mnt/7cf8f1e2-f6ee-43b6-8f39-749a39730a18/Projects/Claude Code/skill-shelf/.puku-cli/skills/skill-shelf-sync"
     }
   ]
 }
