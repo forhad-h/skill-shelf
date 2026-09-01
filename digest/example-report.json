@@ -1,0 +1,123 @@
+{
+  "hrp": "1.0",
+  "report": {
+    "title": "al-Idrisi — Docs Diátaxis Migration",
+    "subtitle": "Collapsed three Markdown directories (design/, docs/, specs/) into a single docs/ tree organized by purpose. All cross-references rewritten, all links verified.",
+    "timestamp": "2026-09-02T00:00:00Z",
+    "project": "idrisi-platform",
+    "branch": "main",
+    "model": "Opus 4.8",
+    "wall_time_seconds": 142,
+    "tokens": { "in": 9100, "out": 3300, "total": 12400 },
+    "cost_usd": 0.04,
+    "status": "success",
+    "sections": {
+      "overview": {
+        "summary": "Collapsed design/, docs/, specs/ into a single docs/ tree organized by Diátaxis purpose (explanation/, how-to/, reference/, tutorials/). All relative cross-references rewritten to new paths and verified by a Python script. Result: 13 total .md files (12 in docs/ + 1 root README).",
+        "stats": [
+          { "label": ".md files",     "value": "13" },
+          { "label": "in docs/",       "value": "12" },
+          { "label": "README lines",   "value": "124" }
+        ]
+      },
+      "files": [
+        {
+          "path": "README.md",
+          "action": "modified",
+          "summary": "Root README rewritten — 12 internal links from ./design/..., ./specs/... repointed to ./docs/explanation/, ./docs/reference/",
+          "lines_added": 84, "lines_removed": 73
+        },
+        {
+          "path": "docs/README.md",
+          "action": "created",
+          "summary": "New Diátaxis index — explanation/, how-to/, reference/, tutorials/",
+          "lines_added": 42, "lines_removed": 0
+        },
+        {
+          "path": "docs/explanation/",
+          "action": "created",
+          "summary": "Renamed from design/ — architecture, build-roadmap, tech-stack, data-sources, inspirations"
+        },
+        {
+          "path": "docs/reference/",
+          "action": "created",
+          "summary": "Renamed from specs/ — observability, data-schema-v0.1, README (stable contracts)"
+        },
+        {
+          "path": "docs/decisions/",
+          "action": "created",
+          "summary": "ADRs (placeholder, 0001-0004 planned)"
+        },
+        {
+          "path": "docs/how-to/",
+          "action": "created",
+          "summary": "Placeholder — Result: 1 root README"
+        },
+        {
+          "path": "docs/tutorials/",
+          "action": "created",
+          "summary": "Placeholder — Result: 1 root README"
+        },
+        {
+          "path": "design/",
+          "action": "deleted",
+          "summary": "Merged into docs/explanation/"
+        },
+        {
+          "path": "specs/",
+          "action": "deleted",
+          "summary": "Merged into docs/reference/"
+        }
+      ],
+      "decisions": [
+        {
+          "title": "Adopt Diátaxis structure",
+          "detail": "Organized docs by purpose — explanation/, how-to/, reference/, tutorials/ — instead of by document type (design/, specs/).",
+          "tradeoffs": [
+            "+ clearer mental model for new contributors",
+            "+ aligns with industry-standard doc taxonomy",
+            "− requires every existing internal link to be rewritten",
+            "− README location changed → broken external links until redirects set"
+          ],
+          "reversible": false
+        },
+        {
+          "title": "Python script to verify markdown links",
+          "detail": "Added scripts/verify_links.py — walks the docs/ tree, parses each .md, checks that every relative link resolves to an existing file.",
+          "tradeoffs": [
+            "+ one-shot migration safety net",
+            "− extra repo dependency (stdlib only, no pip install)"
+          ],
+          "reversible": true
+        }
+      ],
+      "errors": [],
+      "commands": [
+        {
+          "command": "git mv design/* docs/explanation/",
+          "exit_code": 0,
+          "duration_ms": 320,
+          "note": "bulk-rename design/ into docs/explanation/"
+        },
+        {
+          "command": "git mv specs/* docs/reference/",
+          "exit_code": 0,
+          "duration_ms": 180,
+          "note": "bulk-rename specs/ into docs/reference/"
+        },
+        {
+          "command": "python scripts/verify_links.py",
+          "exit_code": 0,
+          "duration_ms": 1800,
+          "note": "all markdown links resolve"
+        },
+        {
+          "command": "git status --porcelain",
+          "exit_code": 0,
+          "duration_ms": 90,
+          "note": "9 file changes (8 renames + 1 new README)"
+        }
+      ]
+    }
+  }
+}

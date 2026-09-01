@@ -45,6 +45,20 @@ Reference: [`bengali-concept-validator/references/fact-check-prompts.md`](bengal
 
 See [`bengali-concept-validator/SKILL.md`](bengali-concept-validator/SKILL.md).
 
+### `digest`
+
+Solve the **ingest problem**. Distill the last turn into an HRP v1 JSON envelope and render it via the data-driven HTML template (`harness-report.html`). Caps at ~10 bullets across files/decisions/errors/commands. Auto-opens in browser.
+
+- Emits a fixed JSON envelope (`HRP` — Harness Report Protocol v1)
+- Renderer is data-driven — the LLM writes JSON only, no HTML/CSS/markup
+- Validator enforces: ≤10 bullets total, valid enums, no prose in `output_excerpt`
+- Output goes to `./.harness-reports/harness-report-<ts>.html` (+ archived raw JSON)
+- Auto-opens in the default browser (`xdg-open` / `open` / `cmd /c start ""`)
+
+Files: `SKILL.md`, `hrp.schema.json`, `example-report.json`, `harness-report.html`, `renderer.js`.
+
+See [`digest/SKILL.md`](digest/SKILL.md).
+
 ## Standard
 
 All spelling and punctuation rulings follow the **Bangla Academy** বাংলা ভাষার বানান অভিধান. Where the Academy allows both forms, prefer the one dominant in modern Bangladeshi tech writing.
@@ -59,13 +73,19 @@ skill-shelf/
 │   ├── SKILL.md
 │   └── references/
 │       └── fact-check-prompts.md
-└── bengali-proofreader/
+├── bengali-proofreader/
+│   ├── SKILL.md
+│   └── references/
+│       ├── code-mixing.md
+│       ├── common-errors.md
+│       ├── conjunct-rules.md
+│       ├── engagement.md
+│       ├── punctuation.md
+│       └── spelling-confusions.md
+└── digest/
     ├── SKILL.md
-    └── references/
-        ├── code-mixing.md
-        ├── common-errors.md
-        ├── conjunct-rules.md
-        ├── engagement.md
-        ├── punctuation.md
-        └── spelling-confusions.md
+    ├── hrp.schema.json
+    ├── example-report.json
+    ├── harness-report.html
+    └── renderer.js
 ```
