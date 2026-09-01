@@ -105,4 +105,4 @@ skill-shelf/
     └── SKILL.md
 ```
 
-The repo also carries a harness-discoverable copy of `skill-shelf-sync` at `.puku-cli/skills/skill-shelf-sync/` — that is the *source* the script reads from. The repo-root `skill-shelf-sync/` is the published mirror.
+The harness-discoverable copy at `.puku-cli/skills/skill-shelf-sync/` is the *source* the script reads from. The repo-root `skill-shelf-sync/` is the published mirror kept in sync by `./copy-skills.sh`.
