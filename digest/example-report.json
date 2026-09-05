@@ -11,6 +11,15 @@
     "tokens": { "in": 9100, "out": 3300, "total": 12400 },
     "cost_usd": 0.04,
     "status": "success",
+    "source_dir": "/var/folders/xx/harness-reports-2026-09-02-001",
+    "source_files": [
+      "/var/folders/xx/harness-reports-2026-09-02-001/harness-report.html",
+      "/var/folders/xx/harness-reports-2026-09-02-001/harness-report.json"
+    ],
+    "sources": [
+      { "kind": "transcript", "ref": "last-turn",                  "bytes": 8421 },
+      { "kind": "file",       "ref": "/abs/path/docs/migration-notes.md", "bytes": 7320, "label": "Migration notes" }
+    ],
     "sections": {
       "overview": {
         "summary": "Collapsed design/, docs/, specs/ into a single docs/ tree organized by Diátaxis purpose (explanation/, how-to/, reference/, tutorials/). All relative cross-references rewritten to new paths and verified by a Python script. Result: 13 total .md files (12 in docs/ + 1 root README).",

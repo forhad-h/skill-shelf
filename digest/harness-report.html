@@ -1,466 +1,723 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="lavender">
+<html lang="en" data-theme="default">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Harness Report · HRP v1</title>
 
-<!-- Tailwind CDN (single external dep) -->
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Inter (UI) + JetBrains Mono (code) -->
+<!-- Source Sans 3 (UI) + Source Code Pro (code) — humanist sans stays legible at 11px -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-
-<script>
-  // Tailwind theme tokens (used by lavender theme)
-  tailwind.config = {
-    theme: {
-      extend: {
-        fontFamily: {
-          sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-        },
-        colors: {
-          cream:    { 50: '#fbfaf7', 100: '#f6f3ec', 200: '#efe9dc' },
-          lavender: { 50: '#f4f1fa', 100: '#ebe4f5', 200: '#dccff0', 300: '#c5b0e6', 400: '#a98bd6', 500: '#8c6bc4', 600: '#6f4fac', 700: '#553c85' },
-          ink:      { 900: '#1c1a2e', 800: '#2a2742', 700: '#3d3856', 500: '#6b6586', 400: '#8a85a3' },
-          success:  { 500: '#22a06b', 100: '#d8f0e3' },
-          warn:     { 500: '#d68a2b', 100: '#fae7c8' },
-          error:    { 500: '#cf3e5a', 100: '#fbd9e0' },
-          info:     { 500: '#4f7cc4', 100: '#dde6f7' },
-        },
-      }
-    }
-  }
-</script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
   /* ════════════════════════════════════════════════════════════
-     HRP · Harness Report Protocol · THEME (lavender)
-     Single theme for now. Reintroduce additional [data-theme] blocks
-     here once verified.
+     HRP · Harness Report Protocol · v1 template
+     Single column, single theme, flat surface, no decoration.
      ════════════════════════════════════════════════════════════ */
 
-  /* Shared base */
+  /* ── Theme tokens ─────────────────────────────────────────── */
+  /* Two themes sharing the same token names:
+       default → pure white canvas, cool grays, indigo accent
+       dark    → near-black canvas, light text, indigo accent (slightly brighter)
+     Status badges: tinted bg + colored text in both themes.            */
+
+  [data-theme="default"] {
+    /* Surfaces — pure white */
+    --bg:           #ffffff;
+    --bg-alt:       #f4f4f5;   /* quiet alt row for neutral tags */
+
+    /* Rules */
+    --rule:         #e5e7eb;
+    --rule-strong:  #c9c6bd;
+
+    /* Text — high contrast, ~17:1 on pure white */
+    --text:         #0f172a;   /* slate-900 */
+    --text-dim:     #475569;   /* slate-600 */
+    --text-faint:   #64748b;   /* slate-500 — AA normal-text on white (4.54:1) */
+
+    /* Accent — indigo, used for links/paths/focus */
+    --accent:       #4338ca;
+    --accent-bg:    #eef2ff;   /* for the active toggle button */
+
+    /* Status — tuned for pure white */
+    --success:      #15803d;
+    --success-bg:   #dcfce7;
+    --warn:         #b45309;
+    --warn-bg:      #fef3c7;
+    --error:        #b91c1c;
+    --error-bg:     #fee2e2;
+    --info:         #1d4ed8;
+    --info-bg:      #dbeafe;
+
+    /* Payload block (raw output) — dark on both themes */
+    --payload-bg:   #0f172a;
+    --payload-text: #f1f5f9;
+  }
+
+  [data-theme="dark"] {
+    /* Surfaces — near-black, with a subtle warm tint to avoid pure #000 */
+    --bg:           #0b0d12;   /* deep canvas */
+    --bg-alt:       #161922;   /* quiet alt row for neutral tags */
+
+    /* Rules */
+    --rule:         #232734;
+    --rule-strong:  #2f3445;
+
+    /* Text — light on dark, AA-compliant */
+    --text:         #e6e8ee;
+    --text-dim:     #a8aebd;
+    --text-faint:  #94a3b8;   /* slate-400 — AA normal-text on dark bg (4.95:1) */
+
+    /* Accent — slightly brighter indigo for dark mode */
+    --accent:       #818cf8;
+    --accent-bg:    #1e1b4b;
+
+    /* Status — saturated colors + deep tinted backgrounds */
+    --success:      #4ade80;   /* green-400 — pops on dark */
+    --success-bg:   #052e1a;
+    --warn:         #fbbf24;   /* amber-400 */
+    --warn-bg:      #3a2407;
+    --error:        #f87171;   /* red-400 */
+    --error-bg:     #3a0d0d;
+    --info:         #60a5fa;   /* blue-400 */
+    --info-bg:      #0c2447;
+
+    /* Payload block stays dark with subtle lift */
+    --payload-bg:   #050810;
+    --payload-text: #e6e8ee;
+  }
+
   html, body {
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Source Sans 3', 'Inter', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
-  h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.025em; line-height: 1.1; }
-  p, li { line-height: 1.7; }
-
-  /* ── Theme: LAVENDER (default) ───────────────────────────── */
-  [data-theme="lavender"] {
-    --bg:        #fbfaf7;
-    --bg-2:      #f6f3ec;
-    --surface:   #ffffff;
-    --surface-2: #f4f1fa;
-    --surface-3: #ebe4f5;
-    --border:    rgba(28, 26, 46, 0.06);
-    --border-2:  rgba(140, 107, 196, 0.18);
-    --text:      #1c1a2e;
-    --text-dim:  #6b6586;
-    --text-faint:#8a85a3;
-    --accent:    #6f4fac;
-    --accent-2:  #8c6bc4;
-    --success:   #22a06b; --success-bg: #d8f0e3;
-    --warn:      #d68a2b; --warn-bg:    #fae7c8;
-    --error:     #cf3e5a; --error-bg:   #fbd9e0;
-    --info:      #4f7cc4; --info-bg:    #dde6f7;
-    --payload-bg:    #1c1a2e;
-    --payload-text:  #d8d3e8;
-  }
-  [data-theme="lavender"] body {
-    background:
-      radial-gradient(800px 500px at 5% 0%, rgba(167, 139, 214, 0.10), transparent 60%),
-      radial-gradient(900px 600px at 100% 100%, rgba(220, 207, 240, 0.18), transparent 60%),
-      var(--bg);
+    text-rendering: geometricPrecision;
     color: var(--text);
+    background: var(--bg);
+    transition: background-color 200ms ease, color 200ms ease;
   }
 
-  /* ── Cards ────────────────────────────────────────────────── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.02), 0 8px 24px -16px rgba(0,0,0,0.10);
-    padding: 2rem;
+  body { font-size: 16px; line-height: 1.55; }
+
+  /* ── Typography ───────────────────────────────────────────── */
+  h1, h2, h3, h4 {
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+  .page-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
     color: var(--text);
+    margin: 0;
   }
-  .card-soft {
-    background: var(--surface-2);
-    border: 1px solid var(--border-2);
-    border-radius: 16px;
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 0 0 12px;
+  }
+  .item-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+  }
+  p, li { line-height: 1.55; }
+
+  code, .mono, .path, .cmd {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    font-size: 13.5px;
+    font-weight: 500;
   }
 
-  /* ── Sidebar nav ─────────────────────────────────────────── */
-  .nav-item {
-    display: flex; align-items: center; gap: 10px;
-    width: 100%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    border: 1px solid transparent;
-    background: transparent;
+  /* ── Layout ───────────────────────────────────────────────── */
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  /* ── Header ───────────────────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 32px;
+  }
+  .brand {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+  }
+  .brand .name { color: var(--text-dim); }
+  .actions {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .actions button {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--text-dim);
+    font-size: 0.8125rem;
     cursor: pointer;
-    transition: all 160ms ease;
-    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--rule-strong);
+  }
+  .actions button:hover {
+    color: var(--text);
+    text-decoration-color: var(--accent);
+  }
+  .actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    text-decoration-color: var(--rule);
+  }
+  .actions button:disabled:hover {
+    color: var(--text-dim);
+    text-decoration-color: var(--rule);
+  }
+  /* Destructive action — clear color cue that this wipes files */
+  .actions button.danger {
+    color: var(--failed, #b91c1c);
+    text-decoration-color: rgba(185, 28, 28, 0.35);
+  }
+  .actions button.danger:hover {
+    color: var(--failed, #b91c1c);
+    text-decoration-color: var(--failed, #b91c1c);
+  }
+  [data-theme="dark"] .actions button.danger {
+    color: #f87171;
+    text-decoration-color: rgba(248, 113, 113, 0.35);
+  }
+  [data-theme="dark"] .actions button.danger:hover {
+    color: #fca5a5;
+    text-decoration-color: #fca5a5;
+  }
+  .actions button.danger.confirmed {
+    color: var(--text-dim);
+    text-decoration: line-through;
+    text-decoration-color: var(--rule-strong);
+    cursor: default;
+  }
+  /* Theme toggle — no underline, just the icon */
+  #btn-theme {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    line-height: 1;
+    padding: 0;
     color: var(--text-dim);
   }
-  .nav-item:hover { background: var(--surface-2); }
-  .nav-item.active {
-    background: var(--surface);
-    border-color: var(--border-2);
-    box-shadow: 0 2px 8px -4px rgba(0,0,0,0.15);
+  #btn-theme:hover { color: var(--text); }
+  .theme-icon {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: inset -5px -5px 0 0 currentColor;
+    transition: box-shadow 150ms ease;
+  }
+  /* In dark mode show a sun (we're in dark → click to go light) */
+  [data-theme="dark"] #btn-theme .theme-icon {
+    box-shadow: inset 5px 5px 0 0 currentColor;
+  }
+
+  /* ── Title block ──────────────────────────────────────────── */
+  .title-block {
+    margin-bottom: 32px;
+  }
+  .title-block .status {
+    display: inline-block;
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    margin-bottom: 12px;
+    border-radius: 3px;
+  }
+  .title-block .subtitle {
+    font-size: 1.0625rem;
+    color: var(--text-dim);
+    margin: 8px 0 0;
+    max-width: 60ch;
+  }
+
+  /* ── Meta row (top of report) ─────────────────────────────── */
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    align-items: baseline;
+    margin-bottom: 40px;
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11.5px;
+    color: var(--text-dim);
+  }
+  .meta-row .cell { display: inline-flex; gap: 6px; align-items: baseline; }
+  .meta-row .k {
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 12.5px;
+  }
+  .meta-row .v { color: var(--text); }
+
+  /* ── Sections ─────────────────────────────────────────────── */
+  .section {
+    margin-bottom: 48px;
+  }
+  .section-body { display: flex; flex-direction: column; gap: 0; }
+
+  /* ── Items (rows) ─────────────────────────────────────────── */
+  .item,
+  .empty,
+  details.group-bullet > summary {
+    padding: 14px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .section-body > *:first-child { border-top: 0; padding-top: 0; }
+  .item:last-child { border-bottom: 1px solid var(--rule); }
+
+  .item-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .item-head .label {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--bg-alt);
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .label-success,
+  .status[data-kind="success"] { background: var(--success-bg); color: var(--success); }
+  .label-warn,
+  .status[data-kind="warn"]    { background: var(--warn-bg);    color: var(--warn); }
+  .label-error,
+  .status[data-kind="failed"]  { background: var(--error-bg);   color: var(--error); }
+  .label-info,
+  .status[data-kind="info"]    { background: var(--info-bg);    color: var(--info); }
+  .label-neutral,
+  .status[data-kind="noop"],
+  .status                     { background: var(--bg-alt);     color: var(--text-dim); }
+  .status-noop                  { background: var(--bg-alt);     color: var(--text-faint); }
+  .status-partial               { background: var(--warn-bg);    color: var(--warn); }
+  .status-failed                { background: var(--error-bg);   color: var(--error); }
+  .status-success               { background: var(--success-bg); color: var(--success); }
+
+  .item-detail {
+    margin: 6px 0 0;
+    color: var(--text-dim);
+    font-size: 1.0625rem;
+    line-height: 1.55;
+  }
+  .item-detail.mono {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13.5px;
     color: var(--text);
   }
-  .nav-item.active .nav-num { background: var(--accent); color: #fff; }
-  .nav-item.active .nav-label { font-weight: 600; color: var(--text); }
-  .nav-num {
-    flex-shrink: 0;
-    width: 24px; height: 24px;
-    border-radius: 7px;
-    background: var(--surface-3);
+
+  /* File path rows */
+  .file-row .path {
     color: var(--accent);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; font-weight: 600;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: all 160ms ease;
+    word-break: break-all;
   }
-  .nav-label { font-size: 13.5px; font-weight: 500; flex: 1; }
-  .nav-count {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10.5px;
+  .file-row .meta {
+    margin-left: auto;
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
     color: var(--text-faint);
-    padding: 2px 7px;
-    background: var(--surface-2);
-    border-radius: 999px;
+  }
+  .file-row .meta .plus  { color: var(--success); }
+  .file-row .meta .minus { color: var(--error); }
+
+  /* Decision rows */
+  .decision-row .tradeoffs {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .decision-row .tradeoffs li {
+    font-size: 0.875rem;
+    padding-left: 16px;
+    position: relative;
+    color: var(--text-dim);
+  }
+  .decision-row .tradeoffs li::before {
+    content: attr(data-mark);
+    position: absolute;
+    left: 0;
+    color: var(--text-faint);
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 600;
+  }
+  .decision-row .tradeoffs li.pro::before { color: var(--success); }
+  .decision-row .tradeoffs li.con::before { color: var(--error); }
+
+  /* Error rows */
+  .error-row {
+    border-left: 2px solid var(--error);
+    padding-left: 14px;
+  }
+  .error-row.warn { border-left-color: var(--warn); }
+  .error-row.info { border-left-color: var(--info); }
+
+  /* Command rows */
+  .command-row .cmd-line {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .command-row .cmd-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    word-break: break-all;
+    color: var(--text);
+  }
+  .command-row .exit {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--bg-alt);
+    flex-shrink: 0;
+  }
+  .command-row .exit.ok    { background: var(--success-bg); color: var(--success); }
+  .command-row .exit.bad   { background: var(--error-bg);   color: var(--error); }
+  .command-row .duration {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-left: auto;
+  }
+  .command-row .note {
+    margin: 6px 0 0;
+    color: var(--text-faint);
+    font-size: 0.85rem;
+    font-style: italic;
   }
 
-  /* ── Pills (semantic) ────────────────────────────────────── */
-  .pill {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10.5px; font-weight: 600;
-    letter-spacing: 0.04em;
+  /* Grouped files (density) */
+  details.group-bullet { margin: 0; }
+  details.group-bullet > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  details.group-bullet > summary::-webkit-details-marker { display: none; }
+  details.group-bullet > summary::marker { content: ''; }
+  .group-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .group-summary .count {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10.5px;
+    font-weight: 500;
     text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--bg-alt);
+    color: var(--text-dim);
   }
-  .pill-success { background: var(--success-bg); color: var(--success); }
-  .pill-error   { background: var(--error-bg);   color: var(--error); }
-  .pill-warn    { background: var(--warn-bg);    color: var(--warn); }
-  .pill-info    { background: var(--info-bg);    color: var(--info); }
-  .pill-neutral { background: var(--surface-2);  color: var(--accent); }
+  .group-summary .dir {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12.5px;
+    color: var(--accent);
+  }
+  .group-summary .breakdown {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .group-summary .chev {
+    margin-left: auto;
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  details.group-bullet[open] > summary .chev::before { content: '▾'; }
+  details.group-bullet:not([open]) > summary .chev::before { content: '▸'; }
+  .group-inner {
+    padding: 0 0 8px 14px;
+    border-left: 1px solid var(--rule);
+    margin-left: 6px;
+  }
 
-  /* ── Payload (code/logs ONLY) ────────────────────────────── */
+  /* ── Payload (raw output ONLY) ────────────────────────────── */
   .payload {
+    margin-top: 10px;
     background: var(--payload-bg);
     color: var(--payload-text);
-    border-radius: 12px;
-    padding: 16px 18px;
+    border-radius: 6px;
+    padding: 12px 14px;
     overflow-x: auto;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12.5px;
-    line-height: 1.7;
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.55;
     white-space: pre-wrap;
     word-break: break-word;
   }
   .payload::-webkit-scrollbar { height: 6px; }
   .payload::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
 
-  /* ── Bullets ─────────────────────────────────────────────── */
-  .bullet {
-    display: flex; align-items: flex-start; gap: 14px;
-    padding: 14px 16px;
-    border-radius: 12px;
-    background: var(--bg-2);
-    border: 1px solid var(--border);
+  /* ── Empty state ──────────────────────────────────────────── */
+  .empty {
+    border-bottom: 1px solid var(--rule);
+    color: var(--text-faint);
+    font-size: 0.875rem;
+    font-style: italic;
+  }
+
+  /* ── Stats (definition list, inline) ──────────────────────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px 24px;
+    margin: 20px 0 0;
+    padding: 16px 0 4px;
+    border-top: 1px solid var(--rule);
+  }
+  .stats .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stats .stat .k {
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+  }
+  .stats .stat .v {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 1rem;
+    font-weight: 500;
     color: var(--text);
   }
-  .bullet + .bullet { margin-top: 12px; }
-  .bullet::before {
-    content: ''; flex-shrink: 0;
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--accent-2);
-    margin-top: 8px;
+
+  /* ── Sources (provenance pills, optional) ─────────────────── */
+  .sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+    margin: 16px 0 0;
+    padding: 12px 0 0;
+    border-top: 1px solid var(--rule);
   }
-
-  /* ── Empty state ─────────────────────────────────────────── */
-  .empty-state {
-    background: var(--surface-2);
-    border: 1px dashed var(--border-2);
-    border-radius: 12px;
-    padding: 14px 18px;
-    color: var(--text-dim);
-    font-style: italic;
-    font-size: 14px;
+  .sources[hidden] { display: none; }
+  .sources .source-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: var(--bg-alt);
+    color: var(--text);
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    border: 1px solid var(--rule);
   }
-
-  /* ── Whitespace hardening ────────────────────────────────── */
-  .card, .card-soft, .bullet, .empty-state { white-space: normal; overflow-wrap: anywhere; word-break: normal; }
-
-  /* ── Section heading ─────────────────────────────────────── */
-  .section-num {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; font-weight: 600;
+  .sources .source-pill[data-kind="file"]      { background: var(--accent-bg); border-color: transparent; }
+  .sources .source-pill[data-kind="pasted"]    { background: var(--info-bg);    border-color: transparent; }
+  .sources .source-pill[data-kind="transcript"]{ background: var(--bg-alt);     border-color: var(--rule); }
+  .sources .source-kind {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: var(--text-faint);
-    letter-spacing: 0.10em;
+  }
+  .sources .source-ref {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--text);
+    text-decoration: none;
+    max-width: 360px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  a.source-ref:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+  .sources .source-bytes {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10.5px;
+    color: var(--text-faint);
   }
 
-  /* ── Buttons ─────────────────────────────────────────────── */
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--border-2);
-    background: var(--surface);
+  /* ── Density banner ───────────────────────────────────────── */
+  .density-note {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 0.8125rem;
     color: var(--text-dim);
-    font-size: 12.5px; font-weight: 500;
-    cursor: pointer;
-    transition: all 150ms ease;
+    margin-bottom: 8px;
   }
-  .btn:hover { background: var(--surface-2); border-color: var(--accent); color: var(--text); }
-  .btn-primary { background: var(--accent); color: #ffffff; border-color: var(--accent); }
-  .btn-primary:hover { background: var(--accent-2); border-color: var(--accent-2); color: #ffffff; }
+  .density-note .marker {
+    font-family: 'Source Code Pro', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--info-bg);
+    color: var(--info);
+  }
+  .density-note .marker.warn { background: var(--warn-bg); color: var(--warn); }
 
-  /* ── Toast ───────────────────────────────────────────────── */
+  /* ── Validation banner ────────────────────────────────────── */
+  .validation-banner {
+    background: var(--error-bg);
+    color: var(--error);
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 32px;
+    font-size: 0.875rem;
+  }
+  .validation-banner h4 {
+    font-size: 0.875rem;
+    margin: 0 0 6px;
+    color: var(--error);
+  }
+  .validation-banner ul { margin: 4px 0 0 18px; padding: 0; }
+  .validation-banner li { margin: 2px 0; }
+
+  /* ── Toast ────────────────────────────────────────────────── */
   #toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
     background: var(--payload-bg);
     color: var(--payload-text);
-    padding: 10px 18px;
-    border-radius: 10px;
-    font-size: 13px; font-weight: 500;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    transition: transform 240ms ease;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    transition: transform 200ms ease;
     z-index: 100;
     pointer-events: none;
+    opacity: 0;
   }
-  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-  /* ── Theme-specific tweaks ───────────────────────────────── */
-  /* (single theme for now; add overrides here when introducing more) */
-
-  /* ── Animations ──────────────────────────────────────────── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
+  /* ── Focus rings (a11y) ───────────────────────────────────── */
+  a:focus-visible,
+  summary:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
   }
-  .stagger { animation: fadeUp 380ms ease both; }
-  .stagger:nth-child(1) { animation-delay: 0.04s; }
-  .stagger:nth-child(2) { animation-delay: 0.08s; }
-  .stagger:nth-child(3) { animation-delay: 0.12s; }
-  .stagger:nth-child(4) { animation-delay: 0.16s; }
-  .stagger:nth-child(5) { animation-delay: 0.20s; }
-  .stagger:nth-child(6) { animation-delay: 0.24s; }
 
-  /* ── Responsive ──────────────────────────────────────────── */
-  @media (max-width: 900px) {
-    .layout-grid { grid-template-columns: 1fr !important; }
-    .sidebar { position: static !important; max-height: none !important; }
+  /* ── Responsive ───────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .wrap { padding: 32px 18px 64px; }
+    .topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .meta-row { font-size: 11px; }
   }
+
+  /* ── Text selection ───────────────────────────────────────── */
+  ::selection { background: rgba(67, 56, 202, 0.18); color: var(--text); }
 </style>
 </head>
 
-<body class="min-h-screen relative">
+<body>
 
-<!-- ════════════════════════════════════════════════════════════
-     TOP BAR · brand + meta
-     ════════════════════════════════════════════════════════════ -->
-<header class="relative z-10 border-b" style="border-color: var(--border);">
-  <div class="max-w-[1280px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
-    <div class="flex items-center gap-3">
-      <div class="flex gap-1">
-        <span class="w-3 h-3 rounded-full bg-red-400"></span>
-        <span class="w-3 h-3 rounded-full bg-amber-300"></span>
-        <span class="w-3 h-3 rounded-full bg-green-400"></span>
-      </div>
-      <div class="font-extrabold text-2xl tracking-tight" style="color: var(--text);">Harness Report</div>
-      <span class="pill pill-neutral ml-2">HRP · v1</span>
-    </div>
-    <div class="hidden md:flex items-center gap-5 text-xs font-mono" style="color: var(--text-dim);">
-      <span>📅 <span id="report-meta-time" class="font-medium" style="color: var(--text);">—</span></span>
-      <span>📁 <span id="report-meta-project" class="font-medium" style="color: var(--text);">—</span></span>
-      <span>🌿 <span id="report-meta-branch" class="font-medium" style="color: var(--text);">—</span></span>
+<div class="wrap">
+
+  <!-- ─── TOP BAR ─────────────────────────────────────────── -->
+  <div class="topbar">
+    <div class="brand"><span class="name">Harness Report</span> · HRP v1</div>
+    <div class="actions">
+      <button id="btn-theme" type="button" aria-label="Toggle theme" title="Toggle light/dark">
+        <span class="theme-icon" aria-hidden="true"></span>
+      </button>
+      <button id="btn-view-json" type="button">View JSON</button>
+      <button id="btn-copy-json" type="button">Copy JSON</button>
+      <button id="btn-download-html" type="button">Download HTML</button>
+      <button id="btn-clean-disk" type="button" class="danger" disabled title="Wipe this report's files from disk">Clean from Disk</button>
     </div>
   </div>
-</header>
 
+  <!-- ─── TITLE BLOCK ─────────────────────────────────────── -->
+  <div class="title-block">
+    <span id="report-status" class="status">—</span>
+    <h1 id="report-title" class="page-title">Loading…</h1>
+    <p id="report-subtitle" class="subtitle"></p>
+  </div>
 
-<!-- ════════════════════════════════════════════════════════════
-     LAYOUT · left sidebar + right body
-     ════════════════════════════════════════════════════════════ -->
-<main id="main-content" class="max-w-[1280px] mx-auto px-6 py-8 relative z-10">
-<div class="layout-grid grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+  <!-- ─── META ROW ────────────────────────────────────────── -->
+  <div id="report-meta" class="meta-row"></div>
 
-  <!-- ─── LEFT SIDEBAR ──────────────────────────────────────── -->
-  <aside class="sidebar sticky top-6 self-start">
-    <div class="overflow-y-auto pr-1" style="max-height: calc(100vh - 60px);">
-
-      <!-- Summary card -->
-      <div class="card stagger mb-5">
-        <div class="flex items-center justify-between mb-3">
-          <span id="sum-status-cell"></span>
-          <span class="text-xs font-mono" style="color: var(--text-faint);">wall <b id="sum-wall">—</b></span>
-        </div>
-        <div class="text-4xl font-extrabold tracking-tighter" style="color: var(--accent);">
-          <span id="sum-files">0</span>
-        </div>
-        <div class="text-xs mt-1" style="color: var(--text-dim);">files modified · model <b id="sum-model">—</b></div>
-        <div id="sum-tokens-row" class="mt-4 pt-4 border-t grid grid-cols-3 gap-2 text-center" style="border-color: var(--border);">
-          <div>
-            <div class="text-base font-bold" style="color: var(--text);"><span id="sum-tok-total">—</span></div>
-            <div class="text-[10px] uppercase tracking-wider" style="color: var(--text-faint);">total</div>
-          </div>
-          <div>
-            <div class="text-base font-bold" style="color: var(--text);"><span id="sum-tok-in">—</span></div>
-            <div class="text-[10px] uppercase tracking-wider" style="color: var(--text-faint);">in</div>
-          </div>
-          <div>
-            <div class="text-base font-bold" style="color: var(--text);"><span id="sum-tok-out">—</span></div>
-            <div class="text-[10px] uppercase tracking-wider" style="color: var(--text-faint);">out</div>
-          </div>
-        </div>
-        <div class="mt-3 flex items-center justify-between text-xs" style="color: var(--text-dim);">
-          <span>cost</span>
-          <b id="sum-cost" class="font-mono">—</b>
-        </div>
-      </div>
-
-      <!-- Section nav -->
-      <div class="mb-3 px-2 text-[10px] font-mono uppercase tracking-widest" style="color: var(--text-faint);">Sections</div>
-      <nav id="section-nav" class="space-y-1.5">
-
-        <button class="nav-item active" data-target="overview">
-          <span class="nav-num">01</span>
-          <span class="nav-label">Overview</span>
-          <span class="nav-count">·</span>
-        </button>
-        <button class="nav-item" data-target="files">
-          <span class="nav-num">02</span>
-          <span class="nav-label">Files Changed</span>
-          <span class="nav-count" id="count-files">0</span>
-        </button>
-        <button class="nav-item" data-target="decisions">
-          <span class="nav-num">03</span>
-          <span class="nav-label">Decisions</span>
-          <span class="nav-count" id="count-decisions">0</span>
-        </button>
-        <button class="nav-item" data-target="errors">
-          <span class="nav-num">04</span>
-          <span class="nav-label">Errors</span>
-          <span class="nav-count" id="count-errors">0</span>
-        </button>
-        <button class="nav-item" data-target="commands">
-          <span class="nav-num">05</span>
-          <span class="nav-label">Commands</span>
-          <span class="nav-count" id="count-commands">0</span>
-        </button>
-      </nav>
-
-      <!-- Action buttons -->
-      <div class="mt-6 space-y-2">
-        <button id="btn-view-json" class="btn w-full justify-center">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h1M16 3h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-1"/></svg>
-          View JSON
-        </button>
-        <button id="btn-copy-json" class="btn w-full justify-center">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy JSON
-        </button>
-        <button id="btn-download-html" class="btn btn-primary w-full justify-center">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-          Download HTML
-        </button>
-      </div>
-
-    </div>
-  </aside>
-
-
-  <!-- ─── RIGHT BODY · sections (all hydration targets) ──────── -->
-  <section class="space-y-6">
+  <!-- ─── SECTIONS ────────────────────────────────────────── -->
+  <main id="main-content">
 
     <!-- 01 · Overview -->
-    <article class="card stagger" id="overview">
-      <div class="flex items-baseline justify-between mb-4">
-        <div class="flex items-baseline gap-3">
-          <span class="section-num">01 / 05</span>
-          <h2 class="text-2xl">Overview</h2>
-        </div>
-        <span id="report-status-pill" class="pill pill-success">—</span>
-      </div>
-      <h1 id="report-title" class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2" style="color: var(--text);">Loading…</h1>
-      <p id="report-subtitle" class="text-base" style="color: var(--text-dim);"></p>
-      <div id="overview-body" class="mt-6 space-y-4"></div>
-      <div id="overview-stats" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-    </article>
-
+    <section class="section" id="overview">
+      <h2 class="section-title">Overview</h2>
+      <div id="overview-body" class="section-body"></div>
+      <div id="overview-sources" class="sources" hidden></div>
+      <dl id="overview-stats" class="stats"></dl>
+    </section>
 
     <!-- 02 · Files -->
-    <article class="card stagger" id="files">
-      <div class="flex items-baseline justify-between mb-4">
-        <div class="flex items-baseline gap-3">
-          <span class="section-num">02 / 05</span>
-          <h2 class="text-2xl">Files Changed</h2>
-        </div>
-        <span class="pill pill-info" id="files-count-pill">0</span>
-      </div>
-      <div id="files-body" class="space-y-3"></div>
-    </article>
-
+    <section class="section" id="files">
+      <h2 class="section-title">Files Changed</h2>
+      <div id="files-body" class="section-body"></div>
+    </section>
 
     <!-- 03 · Decisions -->
-    <article class="card stagger" id="decisions">
-      <div class="flex items-baseline justify-between mb-4">
-        <div class="flex items-baseline gap-3">
-          <span class="section-num">03 / 05</span>
-          <h2 class="text-2xl">Decisions &amp; Trade-offs</h2>
-        </div>
-        <span class="pill pill-neutral">—</span>
-      </div>
-      <div id="decisions-body" class="space-y-3"></div>
-    </article>
-
+    <section class="section" id="decisions">
+      <h2 class="section-title">Decisions</h2>
+      <div id="decisions-body" class="section-body"></div>
+    </section>
 
     <!-- 04 · Errors -->
-    <article class="card stagger" id="errors" style="border-color: rgba(207, 62, 90, 0.25); background: linear-gradient(180deg, var(--surface) 0%, var(--error-bg) 220%);">
-      <div class="flex items-baseline justify-between mb-4">
-        <div class="flex items-baseline gap-3">
-          <span class="section-num" style="color: var(--error);">04 / 05</span>
-          <h2 class="text-2xl" style="color: var(--error);">Errors, Warnings, Unresolved</h2>
-        </div>
-        <span class="pill pill-error" id="errors-count-pill">0</span>
-      </div>
-      <div id="errors-body" class="space-y-4"></div>
-    </article>
-
+    <section class="section" id="errors">
+      <h2 class="section-title">Errors &amp; Warnings</h2>
+      <div id="errors-body" class="section-body"></div>
+    </section>
 
     <!-- 05 · Commands -->
-    <article class="card stagger" id="commands">
-      <div class="flex items-baseline justify-between mb-4">
-        <div class="flex items-baseline gap-3">
-          <span class="section-num">05 / 05</span>
-          <h2 class="text-2xl">Commands Run &amp; Outcomes</h2>
-        </div>
-        <span class="pill pill-info" id="commands-count-pill">0</span>
-      </div>
-      <div id="commands-body" class="space-y-4"></div>
-    </article>
+    <section class="section" id="commands">
+      <h2 class="section-title">Commands</h2>
+      <div id="commands-body" class="section-body"></div>
+    </section>
 
-
-    <p class="text-center text-xs font-mono pt-2" style="color: var(--text-faint);">
-      Generated by <b style="color: var(--text-dim);">harness-report</b> · HRP v1 · 2026-09-02
-    </p>
-
-  </section>
+  </main>
 
 </div>
-</main>
-
 
 <!-- ════════════════════════════════════════════════════════════
      HRP DATA · JSON payload injected here, hydrated by renderer.js
@@ -470,7 +727,7 @@
   "hrp": "1.0",
   "report": {
     "title": "al-Idrisi — Docs Diátaxis Migration",
-    "subtitle": "Collapsed three Markdown directories (design/, docs/, specs/) into a single docs/ tree organized by purpose. All cross-references rewritten, all links verified.",
+    "subtitle": "Collapsed three Markdown directories into a single docs/ tree organized by Diátaxis purpose.",
     "timestamp": "2026-09-02T00:00:00Z",
     "project": "idrisi-platform",
     "branch": "main",
@@ -479,6 +736,15 @@
     "tokens": { "in": 9100, "out": 3300, "total": 12400 },
     "cost_usd": 0.04,
     "status": "success",
+    "source_dir": "/var/folders/xx/harness-reports-2026-09-02-001",
+    "source_files": [
+      "/var/folders/xx/harness-reports-2026-09-02-001/harness-report.html",
+      "/var/folders/xx/harness-reports-2026-09-02-001/harness-report.json"
+    ],
+    "sources": [
+      { "kind": "transcript", "ref": "last-turn",                       "bytes": 8421 },
+      { "kind": "file",       "ref": "/abs/path/docs/migration-notes.md", "bytes": 7320, "label": "Migration notes" }
+    ],
     "sections": {
       "overview": {
         "summary": "Collapsed design/, docs/, specs/ into a single docs/ tree organized by Diátaxis purpose (explanation/, how-to/, reference/, tutorials/). All relative cross-references rewritten to new paths and verified by a Python script. Result: 13 total .md files (12 in docs/ + 1 root README).",
@@ -533,9 +799,34 @@
 }
 </script>
 
-
 <!-- Toast -->
 <div id="toast">—</div>
+
+<!-- Theme bootstrap: applies persisted choice (or OS preference) ASAP -->
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hrp-theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved === 'dark' || saved === 'light' ? saved : (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch (e) { /* localStorage may be blocked — fall back to default */ }
+  })();
+</script>
+
+<!-- Theme toggle — switches data-theme and persists choice -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var btn = document.getElementById('btn-theme');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var current = document.documentElement.getAttribute('data-theme') || 'light';
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('hrp-theme', next); } catch (e) {}
+    });
+  });
+</script>
 
 <!-- Renderer -->
 <script src="renderer.js"></script>

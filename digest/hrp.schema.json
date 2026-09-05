@@ -51,7 +51,18 @@
             "commands":  { "type": "array", "items": { "$ref": "#/$defs/CommandItem" } }
           }
         },
-        "bullets_total": { "type": "integer", "minimum": 0, "description": "Computed by validator; renderer uses it for sidebar counts." }
+        "bullets_total": { "type": "integer", "minimum": 0, "description": "Computed by validator; renderer uses it for sidebar counts." },
+        "source_dir":  { "type": "string", "description": "Absolute path to the temp directory holding this report's files. Used by the renderer's 'Clean from Disk' button. Optional." },
+        "source_files": {
+          "type": "array",
+          "description": "Absolute paths to files written for this report (HTML + JSON). Used by 'Clean from Disk'. Optional.",
+          "items": { "type": "string" }
+        },
+        "sources": {
+          "type": "array",
+          "description": "Provenance of what was ingested to produce this report. Optional; added in HRP 1.0. The legacy 'transcript of the last turn' case may omit this field. When the user passes a file path or pasted prose to /digest, each source is recorded here.",
+          "items": { "$ref": "#/$defs/SourceItem" }
+        }
       }
     }
   },
@@ -121,6 +132,35 @@
         "duration_ms":    { "type": "integer", "minimum": 0 },
         "note":           { "type": "string", "maxLength": 300 },
         "output_excerpt": { "type": "string", "maxLength": 1000 }
+      }
+    },
+    "SourceItem": {
+      "type": "object",
+      "description": "One piece of input that was distilled into this report. Used in report.sources[].",
+      "required": ["kind", "ref"],
+      "additionalProperties": false,
+      "properties": {
+        "kind":  {
+          "type": "string",
+          "enum": ["transcript", "file", "pasted"],
+          "description": "transcript = the last turn's tool calls/output/prose (legacy default). file = a .md file the user passed by path. pasted = inline prose the user typed after /digest."
+        },
+        "ref":   {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "For 'transcript' this is the literal string 'last-turn'. For 'file' this is the absolute path that was read. For 'pasted' this is the literal string 'inline'."
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Approximate size of the input source in bytes. Optional but recommended."
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Optional human-readable label, e.g. 'Migration notes'. Used as the visible pill text when set."
+        }
       }
     }
   }
