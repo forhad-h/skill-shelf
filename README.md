@@ -89,6 +89,17 @@ Requires `gh` (authenticated).
 
 See [`pr-ship/SKILL.md`](pr-ship/SKILL.md).
 
+### `ship`
+
+One command for the full ship workflow: runs `pr-ship` (commit → PR), then `pr-merge` (review → gates → merge) on the PR it created. User-invoked only (`/ship`).
+
+- Requires `pr-ship` and `pr-merge` installed alongside it; their rules apply unchanged
+- Stops at the first failure; the PR stays open and `/pr-merge <pr>` resumes later
+- Still pauses once for explicit merge confirmation
+- `--no-merge` (or `--draft`) stops after the PR is opened
+
+See [`ship/SKILL.md`](ship/SKILL.md).
+
 ### `skill-shelf-sync`
 
 Sync a newly shared skill into the **skill-shelf** repo and push to GitHub. The canonical ingest pipeline:
@@ -137,6 +148,8 @@ skill-shelf/
 │   └── scripts/
 │       └── pr-gates.sh
 ├── pr-ship/
+│   └── SKILL.md
+├── ship/
 │   └── SKILL.md
 └── skill-shelf-sync/
     └── SKILL.md
