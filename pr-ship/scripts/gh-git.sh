@@ -27,7 +27,7 @@ case "$cmd" in
       expected=$(git rev-parse -q --verify "refs/remotes/origin/$branch" || true)
       lease=("--force-with-lease=refs/heads/$branch:$expected")
     fi
-    g push --quiet "${lease[@]}" "$url" "HEAD:refs/heads/$branch"
+    g push --quiet ${lease[@]+"${lease[@]}"} "$url" "HEAD:refs/heads/$branch"
     # Record what was pushed and track it, as `git push -u origin` would.
     git update-ref "refs/remotes/origin/$branch" HEAD
     git config "branch.$branch.remote" origin
