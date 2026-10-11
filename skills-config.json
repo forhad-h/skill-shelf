@@ -22,6 +22,10 @@
       "source": "/Users/forhad/.claude/skills/pr-merge"
     },
     {
+      "name": "pr-ship",
+      "source": "/Users/forhad/.claude/skills/pr-ship"
+    },
+    {
       "name": "skill-shelf-sync",
       "source": "/mnt/7cf8f1e2-f6ee-43b6-8f39-749a39730a18/Projects/Claude Code/skill-shelf/.puku-cli/skills/skill-shelf-sync"
     }

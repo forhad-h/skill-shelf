@@ -74,6 +74,21 @@ Requires `gh` (authenticated) and `jq`.
 
 See [`pr-merge/SKILL.md`](pr-merge/SKILL.md).
 
+### `pr-ship`
+
+Commit the current changes and open a GitHub pull request, the industry-standard way. Step 1 of the ship workflow (follow with `/pr-merge <number>`); user-invoked only (`/pr-ship`).
+
+- Never commits to the default/protected branch — creates a `<type>/<slug>` feature branch first
+- Blocking secret scan of staged changes (gitleaks if installed, plus pattern grep)
+- Runs the project's lint, type-check, and unit tests before committing
+- Conventional Commits, one commit per concern; hooks always run (never `--no-verify`)
+- Syncs with the base branch, pushes, and opens a PR from the repo template or a standard body (Summary, Changes, Testing, Risk & rollback)
+- Asks or recommends whenever a decision needs human judgment
+
+Requires `gh` (authenticated).
+
+See [`pr-ship/SKILL.md`](pr-ship/SKILL.md).
+
 ### `skill-shelf-sync`
 
 Sync a newly shared skill into the **skill-shelf** repo and push to GitHub. The canonical ingest pipeline:
@@ -121,6 +136,8 @@ skill-shelf/
 │   ├── main-ruleset.json
 │   └── scripts/
 │       └── pr-gates.sh
+├── pr-ship/
+│   └── SKILL.md
 └── skill-shelf-sync/
     └── SKILL.md
 ```
