@@ -59,6 +59,21 @@ Files: `SKILL.md`, `hrp.schema.json`, `example-report.json`, `harness-report.htm
 
 See [`digest/SKILL.md`](digest/SKILL.md).
 
+### `pr-merge`
+
+Review a GitHub pull request and merge it safely, behind every gate an industry-standard workflow expects. Step 2 of the ship workflow (after `/pr-ship`); user-invoked only (`/pr-merge <pr>`).
+
+- Security-focused review (correctness, OWASP-style issues, tests) posted to the PR as BLOCKING / SHOULD-FIX / NIT
+- Escalates high-risk changes to a human: workflows, CODEOWNERS, auth, IaC, migrations, dependencies, fork PRs
+- Enforces merge gates via `scripts/pr-gates.sh`: CI, approvals, unresolved threads, conflicts, up-to-date, labels, signatures, protection
+- Merges only on explicit user confirmation, pinned with `--match-head-commit` to the reviewed SHA; never `--admin`
+- Squash by default, deletes the branch, syncs local, checks post-merge CI
+- `main-ruleset.json` — a ready-made GitHub ruleset to protect `main` (`gh api -X POST repos/<owner>/<repo>/rulesets --input main-ruleset.json`)
+
+Requires `gh` (authenticated) and `jq`.
+
+See [`pr-merge/SKILL.md`](pr-merge/SKILL.md).
+
 ### `skill-shelf-sync`
 
 Sync a newly shared skill into the **skill-shelf** repo and push to GitHub. The canonical ingest pipeline:
@@ -95,12 +110,17 @@ skill-shelf/
 │       ├── engagement.md
 │       ├── punctuation.md
 │       └── spelling-confusions.md
-└── digest/
-    ├── SKILL.md
-    ├── hrp.schema.json
-    ├── example-report.json
-    ├── harness-report.html
-    └── renderer.js
+├── digest/
+│   ├── SKILL.md
+│   ├── hrp.schema.json
+│   ├── example-report.json
+│   ├── harness-report.html
+│   └── renderer.js
+├── pr-merge/
+│   ├── SKILL.md
+│   ├── main-ruleset.json
+│   └── scripts/
+│       └── pr-gates.sh
 └── skill-shelf-sync/
     └── SKILL.md
 ```
