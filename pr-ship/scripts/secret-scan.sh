@@ -11,8 +11,10 @@ else
   echo "gitleaks not installed; pattern scan only"
 fi
 
-# Sensitive file names.
-if git diff --cached --name-only | grep -nEi '(^|/)(\.env(\..*)?|.*\.pem|.*\.p12|.*\.key|id_(rsa|ed25519|ecdsa)|credentials(\.json)?)$'; then
+# Sensitive file names. Allowlisted basenames (committed templates) skip only this name check;
+# their contents still go through gitleaks and the pattern scan below.
+allow='(^|/)\.env\.example$'
+if git diff --cached --name-only | grep -vEi "$allow" | grep -nEi '(^|/)(\.env(\..*)?|.*\.pem|.*\.p12|.*\.key|id_(rsa|ed25519|ecdsa)|credentials(\.json)?)$'; then
   echo "^ sensitive file staged"
   found=1
 fi

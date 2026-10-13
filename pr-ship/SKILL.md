@@ -18,7 +18,7 @@ Commit, push, and open a PR for the current changes. Arguments: `$ARGUMENTS`
   `reset`, or `restore` in the main checkout. All of that happens in a separate worktree built by
   `bash SCRIPTS/session-worktree.sh` (`WT` below). Other sessions' changes stay where they are, uncommitted.
 - Never use `--no-verify`, `--no-gpg-sign`, `--force`, or a blind `git add -A`/`.`. Stage by explicit path.
-- Never commit secrets, `.env*`, keys, or build artifacts. The only allowed force push is `--force-with-lease` on your own branch.
+- Never commit secrets, `.env*` (except the allowlisted `.env.example` template, whose contents are still scanned), keys, or build artifacts. The only allowed force push is `--force-with-lease` on your own branch.
 - **GitHub only through gh.** Every remote operation goes through `gh` or `bash SCRIPTS/gh-git.sh`
   (HTTPS with gh's credentials). Never run `git push`, `git pull`, or `git fetch` against `origin`
   directly: an SSH remote can hang (this happened: port 22 failures while gh worked). Local-only git
